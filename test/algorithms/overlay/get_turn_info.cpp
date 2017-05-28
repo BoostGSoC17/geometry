@@ -19,7 +19,6 @@
 #include <boost/foreach.hpp>
 
 #include <boost/geometry/algorithms/intersection.hpp>
-#include <boost/geometry/algorithms/make.hpp>
 
 #include <boost/geometry/algorithms/detail/overlay/get_turn_info.hpp>
 #include <boost/geometry/algorithms/detail/overlay/debug_turn_info.hpp>

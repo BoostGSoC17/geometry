@@ -165,41 +165,22 @@ struct multipoint_multipoint
             }
         }
 
-        // The geometry containing smaller number of points will be analysed first
-        if ( boost::size(multi_point1) < boost::size(multi_point2) )
-        {
-            search_both<false>(multi_point1, multi_point2, result);
-        }
-        else
-        {
-            search_both<true>(multi_point2, multi_point1, result);
-        }
+// TODO: ADD A CHECK TO THE RESULT INDICATING IF THE FIRST AND/OR SECOND GEOMETRY MUST BE ANALYSED
 
-        relate::set<exterior, exterior, result_dimension<MultiPoint1>::value>(result);
-    }
+// TODO: if I/I is set for one MPt, this won't be changed when the other one in analysed
+//       so if e.g. only I/I must be analysed we musn't check the other MPt
 
-    template <bool Transpose, typename MPt1, typename MPt2, typename Result>
-    static inline void search_both(MPt1 const& first_sorted_mpt, MPt2 const& first_iterated_mpt,
-                                   Result & result)
-    {
-        if ( relate::may_update<interior, interior, '0'>(result)
-          || relate::may_update<interior, exterior, '0'>(result)
-          || relate::may_update<exterior, interior, '0'>(result) )
-        {
-            // NlogN + MlogN
-            bool is_disjoint = search<Transpose>(first_sorted_mpt, first_iterated_mpt, result);
+// TODO: Also, the geometry with the smaller number of points may be analysed first
+        //if ( boost::size(multi_point1) < boost::size(multi_point2) )
 
-            if ( BOOST_GEOMETRY_CONDITION(is_disjoint || result.interrupt) )
-                return;
-        }
+        // NlogN + MlogN
+        bool all_handled = search<false>(multi_point1, multi_point2, result);
+        
+        if ( BOOST_GEOMETRY_CONDITION(all_handled || result.interrupt) )
+            return;
 
-        if ( relate::may_update<interior, interior, '0'>(result)
-          || relate::may_update<interior, exterior, '0'>(result)
-          || relate::may_update<exterior, interior, '0'>(result) )
-        {
-            // MlogM + NlogM
-            search<! Transpose>(first_iterated_mpt, first_sorted_mpt, result);
-        }
+        // MlogM + NlogM
+        search<true>(multi_point2, multi_point1, result);
     }
 
     template <bool Transpose,
@@ -234,6 +215,9 @@ struct multipoint_multipoint
                 break;
         }
 
+        // an optimization
+        bool all_handled = false;
+
         if ( found_inside ) // some point of MP2 is equal to some of MP1
         {
 // TODO: if I/I is set for one MPt, this won't be changed when the other one in analysed
@@ -250,10 +234,14 @@ struct multipoint_multipoint
         {
             relate::set<interior, exterior, '0', Transpose>(result);
             relate::set<exterior, interior, '0', Transpose>(result);
+
+            // if no point is intersecting the other MPt then we musn't analyse the reversed case
+            all_handled = true;
         }
 
-        // if no point is intersecting the other MPt then we musn't analyse the reversed case
-        return ! found_inside;
+        relate::set<exterior, exterior, result_dimension<point_type>::value, Transpose>(result);
+
+        return all_handled;
     }
 };
 

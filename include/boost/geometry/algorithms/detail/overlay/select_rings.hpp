@@ -40,11 +40,13 @@ namespace detail { namespace overlay
 
 struct ring_turn_info
 {
-    bool has_traversed_turn;
+    bool has_normal_turn;
+    bool has_uu_turn;
     bool within_other;
 
     ring_turn_info()
-        : has_traversed_turn(false)
+        : has_normal_turn(false)
+        , has_uu_turn(false)
         , within_other(false)
     {}
 };
@@ -258,10 +260,17 @@ inline void update_ring_selection(Geometry1 const& geometry1,
             info = tcit->second; // Copy by value
         }
 
-        if (info.has_traversed_turn)
+        if (info.has_normal_turn)
         {
-            // This turn is traversed (or blocked),
+            // There are normal turns on this ring. It should be traversed, we
             // don't include the original ring
+            continue;
+        }
+        if (info.has_uu_turn)
+        {
+            // If there is a uu-turn, it should be traversed (for union operations)
+            // or it should be skipped (for intersection operations), but in both
+            // cases it should not be included here
             continue;
         }
 

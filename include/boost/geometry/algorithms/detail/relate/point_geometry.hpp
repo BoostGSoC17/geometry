@@ -60,27 +60,29 @@ struct point_geometry
         if ( BOOST_GEOMETRY_CONDITION(result.interrupt) )
             return;
 
-        typedef detail::relate::topology_check<Geometry> tc_t;
-        if ( relate::may_update<exterior, interior, tc_t::interior, Transpose>(result)
-          || relate::may_update<exterior, boundary, tc_t::boundary, Transpose>(result) )
+        // the point is on the boundary
+        if ( pig == 0 )
         {
-            // the point is on the boundary
-            if ( pig == 0 )
-            {
-                // NOTE: even for MLs, if there is at least one boundary point,
-                // somewhere there must be another one
+            // NOTE: even for MLs, if there is at least one boundary point,
+            // somewhere there must be another one
+
+            // check if there are other boundaries outside
+            typedef detail::relate::topology_check<Geometry> tc_t;
+            //tc_t tc(geometry, point);
+            //if ( tc.has_interior )
                 relate::set<exterior, interior, tc_t::interior, Transpose>(result);
+            //if ( tc.has_boundary )
                 relate::set<exterior, boundary, tc_t::boundary, Transpose>(result);
-            }
-            else
-            {
-                // check if there is a boundary in Geometry
-                tc_t tc(geometry);
-                if ( tc.has_interior() )
-                    relate::set<exterior, interior, tc_t::interior, Transpose>(result);
-                if ( tc.has_boundary() )
-                    relate::set<exterior, boundary, tc_t::boundary, Transpose>(result);
-            }
+        }
+        else
+        {
+            // check if there is a boundary in Geometry
+            typedef detail::relate::topology_check<Geometry> tc_t;
+            tc_t tc(geometry);
+            if ( tc.has_interior )
+                relate::set<exterior, interior, tc_t::interior, Transpose>(result);
+            if ( tc.has_boundary )
+                relate::set<exterior, boundary, tc_t::boundary, Transpose>(result);
         }
     }
 };
